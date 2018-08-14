@@ -1,1 +1,698 @@
-占쏙옙티占쏙옙占쏙옙占싱쇽옙 占쏙옙占쏙옙占쏙옙 占쏙옙占쏙옙 占쏙옙占쏙옙 , PendingIntent 占쏙옙占쏙옙占쏙옙 Flag占쏙옙 占쏙옙占쏙옙占싹몌옙 占싫댐옙.
+4월 22일
+
+/*
+노티피케이션 수정시 오류 수정 , PendingIntent 생성시 Flag를 조정하면 된다.
+*/
+
+
+///Manifest
+
+
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.merryapplications.hellocalendar">
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/icon"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/icon"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity android:name=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".Memojang" />
+        <activity android:name=".ShowAllMemos"></activity>
+        <receiver android:name=".NotificationControl"></receiver>
+    </application>
+
+</manifest>
+
+
+
+
+
+///MainActivity
+
+package com.merryapplications.hellocalendar;
+
+import android.content.Intent;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.CalendarView;
+
+public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setIcon(R.mipmap.icon);
+
+        //Show Temp Memo 구현
+        Button tempbutton = (Button)findViewById(R.id.TempButton);
+        tempbutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent totempmemo = new Intent(MainActivity.this, Memojang.class);
+                MakeNowDate makenowdate = new MakeNowDate();
+                String nowdate = makenowdate.getRightnow();
+                totempmemo.putExtra("nowdate",nowdate);
+                totempmemo.putExtra("Istemp","yes");
+                startActivity(totempmemo);
+            }
+        });
+
+        Button toshowall = (Button) findViewById(R.id.ShowAllButton);
+        toshowall.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                Intent toshwoallintent = new Intent(getApplicationContext(), ShowAllMemos.class);
+                startActivity(toshwoallintent);
+
+            }
+        });
+
+
+
+        //CalendarView를 누르면 현재 날짜를 testText에 추가시킴
+        CalendarView calendarview = (CalendarView)findViewById(R.id.calendarView);
+        calendarview.setOnDateChangeListener(new CalendarView.OnDateChangeListener() {
+            @Override
+            public void onSelectedDayChange( CalendarView view, int year, int month, int dayOfMonth) {
+                String selectedDate = "작성 날짜 : ";
+                selectedDate += Integer.toString(year)+"_";
+                selectedDate += Integer.toString(month+1) + "_";
+                selectedDate += Integer.toString(dayOfMonth);
+
+                //수정일시를 받기 위해 MakeNowDate()객체를 만들어서 넣어준다
+                MakeNowDate mk = new MakeNowDate();
+
+                Intent totempmemo = new Intent(MainActivity.this, Memojang.class);
+                totempmemo.putExtra("Istemp", "no");
+                totempmemo.putExtra("selectedDate", selectedDate);
+                totempmemo.putExtra("nowdate",mk.getRightnow());
+                startActivity(totempmemo);
+            }
+
+        });
+
+
+    }
+}
+
+
+
+
+
+
+///MakeDate
+
+
+
+package com.merryapplications.hellocalendar;
+
+import java.util.Calendar;
+
+/**
+ * Created by Yakutwill on 2017-04-05.
+ */
+
+public class MakeNowDate {
+    //객체를 만드는 순간의 현재 날짜의 객체를 받는다.
+    Calendar mCalendar = Calendar.getInstance();
+    int year = mCalendar.get(Calendar.YEAR);
+    int month = mCalendar.get(Calendar.MONTH)+1;
+    int dayofmonth = mCalendar.get(Calendar.DAY_OF_MONTH);
+    int hour = mCalendar.get(Calendar.HOUR);
+    int minute = mCalendar.get(Calendar.MINUTE);
+    String rightnow = "수정 일시 : "+Integer.toString(year)+"_"+Integer.toString(month)+"_"+Integer.toString(dayofmonth)+"_"+Integer.toString(hour)+"_"+Integer.toString(minute);
+
+    //객체를 만든 순간의 일시를 String으로 내보낸다.
+    public String getRightnow(){
+        return rightnow;
+    }
+
+}
+
+
+
+/// Memojang.
+
+
+package com.merryapplications.hellocalendar;
+
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.os.SystemClock;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.util.Calendar;
+import java.util.Date;
+
+public class Memojang extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_memojang);
+
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setIcon(R.mipmap.icon);
+
+        Intent getintent = getIntent();
+        final EditText memoedittext = (EditText)findViewById(R.id.MemoEditText);
+
+        final Button savebutton = (Button)findViewById(R.id.SaveMemoButton);
+        final Button deletebutton = (Button)findViewById(R.id.MemoDeleteButton);
+
+
+
+        //TempMemo일때
+        if(getintent.getStringExtra("Istemp").equals("yes")){
+
+            //바로 밑 부분에 버튼을 누르면 Temp.txt를 읽어 오는 것을 만들어야지!, Try Catch 해서 위의 것을 복사해오자.
+            try{
+                Log.v("Tag","Temp.txt파일을 읽으려고 시도합니다.");
+
+                //있으면 상관없고 없으면 만들고
+                FileOutputStream fos = openFileOutput("Temp.txt", Context.MODE_APPEND);
+                //fos.close();
+                Log.v("Tag", "Temp.txt파일 생성완료");
+
+                    /*
+                    try문 안에서는 작동하지 않는건가? 밖으로 빼내보자
+                    BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream("Temp.txt")));
+                    StringBuffer sb = new StringBuffer();
+                    String str;
+                    */
+                try {
+                    InputStream in = openFileInput("Temp.txt");
+                    InputStreamReader inr = new InputStreamReader(in);
+                    BufferedReader br = new BufferedReader(inr);
+                    StringBuffer sb = new StringBuffer();
+                    String str;
+
+                    Log.v("Tag", "리드라인 전까지 완료, 바로 밑의 while문 ");
+                    //무언가 fis.read에 있다면 즉, fis.read()가 참이라면
+                    while ((str = br.readLine())!= null) {
+                        sb.append(str+"\n");
+                    }
+                    br.close();
+                    memoedittext.setText(sb);
+                    Log.v("Tag", "리드라인까지 완료, 바로 위의 mmoedittext 완료");
+                }catch(Exception x){
+                    Log.v("tag", "문제발생");
+                }
+            }catch (Exception e){
+                //임시 메모장, 밑은 확인용 ok
+                memoedittext.setText("임시 메모장"+"\n"+getintent.getStringExtra("nowdate"));
+                Log.v("Tag", "Temp.txt파일을 초기화 읽을 수 없습니다.");
+                Log.v("Tag", "Temp.txt 파일 생성합니다.");
+                try {
+                    openFileOutput("Temp.txt", Context.MODE_APPEND);
+                }catch (Exception f){
+                    Log.v("Tag","초기화 Temp.txt파일이 없어서 만들었습니다.");
+
+                }
+            }
+
+
+            //여기에서 savebutton이 눌리면 동작하는 것을 만든다
+            savebutton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    //text파일을 생성한다
+                    try {
+                        //본래 파일을 delete한다.
+                        deleteFile("Temp.txt");
+                        FileOutputStream fos = openFileOutput("Temp.txt", Context.MODE_APPEND);
+                        PrintWriter printWriter = new PrintWriter(fos);
+                        printWriter.println(memoedittext.getText());
+                        printWriter.close();
+                        memoedittext.setText("");
+                        Log.v("Tag","Temp.txt파일을 정상적으로 저장했습니다!");
+
+                        //Temp.txt파일을 읽어온다.
+                        try{
+                            Log.v("Tag","SaveButton을 눌러을 때 Temp.txt파일을 읽으려고 시도합니다.");
+                            InputStream in = openFileInput("Temp.txt");
+                            InputStreamReader inr = new InputStreamReader(in);
+                            BufferedReader br;
+                            br = new BufferedReader(inr);
+                            StringBuffer sb = new StringBuffer();
+                            String str;
+                            //무언가 fis.read에 있다면 즉, fis.read()가 참이라면
+                            Log.v("Tag","SaveButton을 눌렀을 때 While전까지 완료 되었습니다.");
+                            while ((str=br.readLine()) != null) {
+                                sb.append(str+"\n");
+                            }
+                            br.close();
+                            memoedittext.setText(sb);
+                        }catch (Exception e){
+                            Log.v("Tag", "SaveButton을 눌렀을 때 Temp.txt파일을 읽을 수 없습니다.");
+                        }
+
+                    }catch (Exception e){
+                        Log.v("Tag","Temp.txt파일을 만드는 것에 실패했습니다.");
+                    }
+
+                }
+            });
+
+            //여기에서 deletebutton 눌리면 동작하는 것을 만든다.
+            deletebutton.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    try{
+                        deleteFile("Temp.txt");
+                        memoedittext.setText("");
+                        Log.v("Tag", "Temp.txt파일 삭제 완료");
+                    }catch (Exception e){
+                        Log.v("Tag","Temp.txt를 삭제할 수 없습니다");
+                    }
+                    return true;
+                }
+            });
+
+        }
+
+        //DatedMemo일때
+        else if(getintent.getStringExtra("Istemp").equals("no")){
+            Log.v("Tag", "Dated메모로 접근했습니다.");
+            final Intent datedintent = getIntent();
+
+            //nameoffile 뒤에 .txt 확장자를 붙여줬다.
+            final String nameoffile = datedintent.getStringExtra("selectedDate").toString()+".txt";
+            Log.v("Tag", "Dated메모일 때 selectedDate는 " + datedintent.getStringExtra("selectedDate").toString() + " 입니다.");
+            //실제 절대 경로를 받아오는 문법
+            String dirPath = getFilesDir().getAbsolutePath();
+            //1번 파일의 전체 경로를 써준다 File afile = new File(dirPath+"/"+nameoffile);
+            //2번 파일의 이름만 써준다
+            File afile = new File(dirPath+"/"+nameoffile);
+
+            //dirPath아래에 nameoffile이 있는지 없는지 검사하는 if문
+            if(afile.exists()){
+                Log.v("Tag", "지정된 nameoffile의 이름을 가진 파일이 있습니다.");
+
+                //파일이 있다면 읽어와서 edittext에 써준다.
+                try{
+                    Log.v("Tag","이미 있는 파일의 텍스트를 읽어오려고 합니다.");
+                    InputStream in = openFileInput(nameoffile);
+                    InputStreamReader inr = new InputStreamReader(in);
+                    BufferedReader br;
+                    br = new BufferedReader(inr);
+                    StringBuffer sb = new StringBuffer();
+                    String str;
+                    //무언가 fis.read에 있다면 즉, fis.read()가 참이라면
+                    Log.v("Tag","이미 있는 파일의 while문 전까지 완료했습니다.");
+                    while ((str=br.readLine()) != null) {
+                        sb.append(str+"\n");
+                    }
+                    br.close();
+                    memoedittext.setText(sb);
+                    Log.v("Tag", "이미 있는 파일을 다 읽었습니다.");
+
+                }catch (Exception e){
+                    Log.v("Tag", "SaveButton을 눌렀을 때 Temp.txt파일을 읽을 수 없습니다.");
+                }
+
+
+            }else{
+                //파일이 없다면
+                Log.v("Tag", "지정된 nameoffile이 없습니다.");
+                //파일을 만들어보자
+                try{
+                    Log.v("Tag", "파일 생성 시도!");
+
+                    //openFileOutput에 넣을때 맨 앞의 인자는 꼭 "고정값.txt"이어야 한다??? nameoffile은 String으로 잘 받았는데 문제네... 고정값이어야하나.
+                    //FileOutputStream fos = openFileOutput(nameoffile, Context.MODE_APPEND); 작동을 하지 않아서 다른 방법 찾음
+
+                    File bfile = new File(dirPath+"/"+nameoffile);
+                    Log.v("Tag","새롭게 만든 파일의 위치는 "+bfile+" 입니다.");
+                    Log.v("Tag", "파일 생성 완료!");
+
+                }catch (Exception e){
+                    Log.v("Tag", "파일 생성 문제발생!");
+                }
+            }
+
+            //Save버튼이 눌려졌을 때 실행되는 부분
+            //똑같은 savebutton을 사용하니까 오류가 났네....음... 그럼 그냥 새로 만들어야겠다 아마 중복오류는 아닐수도있는데
+            savebutton.setOnClickListener(new View.OnClickListener(){
+                @Override
+                public void onClick(View v){
+                    String tempstring = memoedittext.getText().toString();
+                    deleteFile(nameoffile);
+
+                    //Notificaition 시작
+                    //노티피케이션 실행 아주 작동 잘 된다.
+                    //현재 context에서, 파일이름, 파일의 내용읽어서 String으로 보내준다.
+                    // 생성자를 사용하면 안되지 그럼
+                    // NotificationControl nc = new NotificationControl(getApplication(),nameoffile,tempstring);
+
+                    //여기서 문제 어떻게 지정한 시간에 인텐트를 보내게 만드는 것일까? 지금만드는건 어플리케이션이 꺼지면 동작은 안해
+                    //그러면 동작하게 만들어야지. 뭐로? Alarmanager로
+
+                    Intent tonotificationcontrol = new Intent(getApplicationContext(), NotificationControl.class);
+                    tonotificationcontrol.putExtra("nameoffile", nameoffile);
+                    tonotificationcontrol.putExtra("filecontents", tempstring);
+
+
+                    //현재 받은 년 월 일을 받는다
+                    int year;
+                    int month;
+                    int dayofmonth;
+                    String[] spliteddate = nameoffile.split("_");
+
+                    int notiid = Integer.parseInt(spliteddate[0].substring(8,spliteddate[0].length())+spliteddate[1]+spliteddate[2].substring(0,spliteddate[2].length()-4));
+
+                    tonotificationcontrol.putExtra("notiid", notiid);
+
+                    Log.v("Tag", "splitedate[0] = " + spliteddate[0].substring(8,spliteddate[0].length()));
+                    Log.v("Tag", "splitedate[1] = " + spliteddate[1]);
+                    Log.v("Tag", "splitedate[2] = " + spliteddate[2].substring(0,spliteddate[2].length()-4));
+
+                    year =Integer.parseInt(spliteddate[0].substring(8,spliteddate[0].length()));
+                    month= Integer.parseInt(spliteddate[1]);
+                    dayofmonth = Integer.parseInt(spliteddate[2].substring(0,spliteddate[2].length()-4));
+
+                    //컨텍스트, 알람판별 id, 인텐트, flag
+                    PendingIntent pending = PendingIntent.getBroadcast(getApplicationContext(), notiid,tonotificationcontrol, PendingIntent.FLAG_UPDATE_CURRENT);
+
+                    AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+                    Log.v("Tag", "Noti Id : " + notiid);
+                    //시간설정을 해야해 시간세팅하는게 또 문제네
+                    //시간 검사를 하려고 잠깐 설정, 알람동작을 언제 울리게 할 것인가
+                    Calendar cal = Calendar.getInstance();
+
+                    Log.v("Tag", "시간세팅 전입니다");
+
+                    Log.v("Tag", cal.get(Calendar.YEAR) + "년 " + cal.get(Calendar.MONTH) + "월 " + cal.get(Calendar.DAY_OF_MONTH)+"일"+cal.get(Calendar.HOUR_OF_DAY) +"시"+cal.get(Calendar.MINUTE)+"분"+cal.get(Calendar.SECOND)+"초");
+
+
+                    Log.v("Tag", "시간세팅에 들어갑니다");
+
+                    //받아온 것과 실제 시간은 항상 month에 -1을 해줘야 한다.
+                    cal.set(year, month-1,dayofmonth,11,47,0);
+
+                    Log.v("Tag", cal.get(Calendar.YEAR) + "년 " + cal.get(Calendar.MONTH) + "월 " + cal.get(Calendar.DAY_OF_MONTH)+"일"+cal.get(Calendar.HOUR_OF_DAY) +"시"+cal.get(Calendar.MINUTE)+"분"+cal.get(Calendar.SECOND)+"초");
+
+                    Log.v("Tag", "시간세팅 완료되었습니다.");
+
+                    Log.v("Tag", "시간세팅을 timeMillis로 표현합니다.");
+
+                    Log.v("Tag", cal.getTimeInMillis()+" 입니다.");
+
+                    Log.v("Tag", "Sysytem.currentTimeMillis()를 표현합니다.");
+
+                    Log.v("Tag", System.currentTimeMillis()+" 입니다.");
+                    Date d = new Date(year, month - 1, dayofmonth, 9, 0, 0);
+
+                    Log.v("Tag", "date.currentTimeMillis()를 표현합니다.");
+                    Log.v("Tag", d.getTime() + " 표현합니다.");
+
+
+                    Log.v("Tag", "알람등록전 까지 완료되었습니다.");
+                    //밑에가 제대로 뜨면 좋겠다! 안 뜬다면 여기가 문제
+                    //am.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(),pending);
+                    try{
+                        am.set(AlarmManager.RTC_WAKEUP ,cal.getTimeInMillis(), pending);
+                        Log.v("Tag", "알람등록 까지 완료되었습니다.");
+
+                    }catch (Exception e){
+                        Log.v("Tag", "시간등록 API레벨 문제로 Date로 넘겨줍니다");
+                        am.set(AlarmManager.RTC_WAKEUP, d.getTime(),pending);
+                    }
+
+
+                    try {
+                        FileOutputStream fos = openFileOutput(nameoffile, Context.MODE_APPEND);
+                        PrintWriter pw = new PrintWriter(fos);
+                        pw.append(tempstring);
+                        pw.close();
+                        Log.v("Tag", "save button을 눌렀는데 잘 저장 되었습니다.");
+
+                        finish();
+                        Intent a = new Intent(getApplicationContext(), ShowAllMemos.class);
+                        startActivity(a);
+
+                    }catch(Exception e){
+                        Log.v("Tag", "Save버튼 눌렀을 때 문제 발생했습니다");
+                    }
+
+                }
+            });
+
+
+            //Delete버튼이 눌려졌을 때 실행되는 부분
+            deletebutton.setOnLongClickListener(new View.OnLongClickListener(){
+                @Override
+                public boolean onLongClick(View v){
+                    deleteFile(nameoffile);
+                    Log.v("Tag", "파일이 잘 삭제 되었습니다");
+                    finish();
+                    Intent a = new Intent(getApplicationContext(), ShowAllMemos.class);
+                    startActivity(a);
+                    return true;
+                }
+            });
+
+
+
+        }
+
+
+    }
+}
+
+
+/// Notification Control
+
+
+package com.merryapplications.hellocalendar;
+
+
+import android.app.AlarmManager;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.support.v4.app.NotificationCompat;
+import android.util.Log;
+
+/**
+ * Created by Yakutwill on 2017-04-10.
+ */
+
+public class NotificationControl extends BroadcastReceiver{
+
+
+    private String nameoffile;
+    private String year;
+    private String month;
+    private String date;
+
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+
+        Log.v("Tag", "NotificationControl 시작까진 잘 되었습니다.");
+
+        //기본적으로 여러 notification을 등록할 부분을 만들어 준다. :) 기본 정보를 받아 오는 것이다.
+        nameoffile = intent.getStringExtra("nameoffile");
+        String[] spliteddate = nameoffile.split("_");
+
+        //밑에 필요한 date를 가공해 준다.
+        year = spliteddate[0].substring(8,spliteddate[0].length());
+        month= spliteddate[1];
+        date = spliteddate[2].substring(0,spliteddate[2].length()-4);
+
+
+        //Calendar객체를 이용해서 새롭게 만들어주자. 잠깐 min 16부터 되는데 calendar는 24란 말이야
+        //시간 설정을 어떻게 하지 Date(년,월,일,시,분,초)특정시간과 시간을 지정, 시분초도 가능능 obsolete를 사용하면 안되는데 아나
+
+        //Date ndate = new Date();
+        //Date setdate = new Date(Integer.parseInt(year),Integer.parseInt(month)-1,Integer.parseInt(date));
+
+        //notification compat builder를 사용해 보자, 직접 생성한 것과 다르게 자동으로 빌더가 노티피케이션 클릭시 등록 해제 해 준다.
+
+        //액티비티를 상속받는 클래스가 아니기 때문에 getSystemService를 이용하려면 ctxt를 받아와야한다.
+        NotificationManager nm = (NotificationManager) context.getSystemService(context.NOTIFICATION_SERVICE);
+
+        Intent tomemojang = new Intent(context, Memojang.class);
+        tomemojang.putExtra("Istemp", "no");
+        Log.v("Tag","노티피케이션 컨트롤에서 selectedDate는 " +nameoffile.substring(0,nameoffile.length()-4).toString()+ " 입니다.");
+        tomemojang.putExtra("selectedDate",nameoffile.substring(0,nameoffile.length()-4).toString());
+
+        PendingIntent frompending = PendingIntent.getActivity(context, 0, tomemojang, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
+
+        builder.setSmallIcon(R.mipmap.icon);
+        //Ticker는 잠깐 뜨는 알림이다.
+        builder.setTicker("오늘 일정이 등록되어있습니다.");
+        //밑 부분을 조작해야한다. 시간은 맞는데. 음.... 과연 이게 동작하나 모르겠네
+        builder.setWhen(System.currentTimeMillis());
+        //미 확인 메시지의 개수를 1로 설정해준다 setNumber인데 obsolete되어있군
+        builder.setContentTitle(month+"월 "+date+"일"+" 일정이 있습니다.");
+        //밑 부분에는 String형식으로 받아와야한다.
+        builder.setContentText(intent.getStringExtra("filecontents"));
+        //builder.setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_VIBRATE);
+        //builder.setDefaults(Notification.DEFAULT_VIBRATE);
+        builder.setContentIntent(frompending);
+        builder.setAutoCancel(true);
+
+        Log.v("Tag","지금의 Notification Id : " + intent.getIntExtra("notiid", 0) );
+        nm.notify(intent.getIntExtra("notiid",0),builder.build());
+        //일단 노티피케이션이 완료된 후 새로운 것은
+    }
+
+    //클래스를 만들었으니 이 클래스를 콜하면 아래 setNotificaion하고, deleteNotification을 사용할 거란 말이지. 그러면 어쨋거나 넘어오는 인자가 있어야하니니
+
+
+}
+
+///ShowAllMemos
+
+
+package com.merryapplications.hellocalendar;
+
+import android.content.Intent;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+import android.widget.Toast;
+
+import java.io.File;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+
+public class ShowAllMemos extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_show_all_memos);
+
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setIcon(R.mipmap.icon);
+
+        String dirPath = getFilesDir().getAbsolutePath();
+        File dirfile = new File(dirPath);
+        ArrayList<String> filelist = searchOneByOne(dirfile);
+        ListView alistview = (ListView)findViewById(R.id.AllMemosList);
+
+
+        alistview.setAdapter(new ArrayAdapter(this, android.R.layout.simple_list_item_1, filelist));
+        alistview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+
+                String str = parent.getAdapter().getItem(position).toString();
+                Intent tomemo = new Intent(getApplicationContext(), Memojang.class);
+                tomemo.putExtra("Istemp", "no");
+                tomemo.putExtra("selectedDate", str.substring(0, str.length() - 4));
+                finish();
+                startActivity(tomemo);
+
+            }
+        });
+
+    }
+
+
+
+    public ArrayList<String> searchOneByOne(File folder){
+
+        File list[] = folder.listFiles();
+        ArrayList<String> filelist = new ArrayList<>();
+
+        if(list==null)
+            return null;
+
+        for(File file : list){
+
+  /*          if(file.isDirectory()){
+// 폴더 인지 아닌지
+            }
+*/
+            if(file.getName().contains("작성 날짜")){
+                filelist.add(file.getName());
+
+            }
+/*
+            if(file.getName().endsWith(".txt")){
+// jpg 형식의 파일을 찾을 때
+
+            }*/
+
+        }
+
+        return filelist;
+
+    }
+
+}
+
+
+//gradle
+
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion "25.0.2"
+    defaultConfig {
+        applicationId "com.merryapplications.hellocalendar"
+        minSdkVersion 18
+        targetSdkVersion 25
+        versionCode 4
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    //액티비티 상태 바에 아이콘 넣기 위해 0을 +로 바꿈
+    compile 'com.android.support:appcompat-v7:25.3.0'
+    compile 'com.android.support.constraint:constraint-layout:1.0.2'
+    testCompile 'junit:junit:4.12'
+}
