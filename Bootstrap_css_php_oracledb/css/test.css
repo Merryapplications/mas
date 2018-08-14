@@ -1,0 +1,136 @@
+/*css 파일을 외부에서 또 참조해 올 수 있다. @import를 사용하여 바로 접근 가능*/
+@import url(http://fonts.googlepis.com/earlyaccess/nanumgothic.css);
+
+
+/* 텍스트 영역 text.css 본 파일을 link하였을 시 전체 적으로 나눔고딕을 사용하게 된다*/
+
+*{
+	font-family:"Nanum Gothic";
+
+}
+
+/*text.css 본 파일을 link하였을 시 색깔은 이렇게 된다*/
+*{
+	color:#000000;
+	text-decoration:none;
+}
+
+/*text.css 본 파일을 link하였을 시 마우스 오버시 색깔이 변한다*/
+/**:hover{
+	color:#ffffff;
+	text-decoration:none;
+
+}*/
+
+/*네비게이션 영역 */
+
+.navbar-default {
+	/*배경 색깔 변경 */
+	background-color: #000000;
+	border-color:#000000;
+}
+
+.navbar-default .navbar-brand{
+	/* 네비게이션 제목 색깔 */
+	color:#ffffff;
+}
+
+.navbar-defualt .navbar-brand : hover, .navbar-default .navbar-brand : focus{
+	/*네비게이션 마우스 오버시*/
+	background-color: :transparent;
+	color:#ffffff;
+}
+
+
+/*이 부분과 밑 부분이 문제인것같다 중복해서 해보고 안되면 말자*/
+.nav .navbar-nav >.active a,
+.nav .navbar-nav >.active a:hover,
+.nav .navbar-nav >.active a:focus
+{
+	color:#ffffff;
+}
+.nav .navbar-nav > ul > li > a,
+.nav .navbar-nav > ul > li > a:hover,
+.nav .navbar-nav > ul > li > a:focus
+{
+	color:#ffffff;
+}
+
+/*진짜 마지막.. 기어코 안되네*/
+.mynav > ul > a,
+.mynav > ul > a:hover,
+.mynav > ul > a:focus
+{
+	color:#ffffff;
+}
+
+
+/*
+네비게이션에서 현재 클릭이 된 상태를 표시해 준다*/
+.navbar-default .navbar-nav > .active a,
+.navbar-default .navbar-nav > .active a:hover,
+.navbar-default .navbar-nav > .active a:focus{
+
+color:#ffffff;
+background-color: :#ffffff;
+}
+
+/*
+네비게이션에서 리스트 속성을 꾸며준다 */
+.navbar-default .navbar-nav > li > a,
+.navbar-default .navbar-nav > li > a:hover,
+.navbar-default .navbar-nav > li > a:focus{
+color:#ffffff;
+background-color: :#0d9ddb;
+
+}
+
+/*
+드랍다운이 열렸을 때 마우스 색상 이벤트 */
+.navbar-default .navbar-nav > .open a,
+.navbar-default .navbar-nav > .open a:hover,
+.navbar-default .navbar-nav > .open a:focus{
+
+color:#000000;
+background-color: :#ffffff;
+text-decoration:none;
+
+}
+
+.navbar-default .navbar-nav >li >a {
+	/*네비게이션 기본 색상 */
+	color:white;
+}
+
+.imgcenter{
+	width:300px;
+	height:200px;
+	display: block;
+	margin-left:auto;
+	margin-right:auto;
+
+	
+}
+
+/* 미디어 쿼리를 사용하는 방법 
+	화면의 해상도가 달라 질 경우 디자인이 적용 안 되는 상황 해결 */
+@media (max-width :767px){
+	.navbar-default .navbar-nav .open .dropdown-menu > li > a{
+		color:#ffffff;
+	}
+	/*마우스가 올라갔거나 포커스 시에 */
+	.navbar-default .navbar-nav .open .dropdown-menu >li >a:hover,
+	.navbar-default .navbar-nav .open .dropdown-menu >li >a:focus{
+		color:#ffffff;
+	}
+}
+
+
+
+
+/* div id='centerbox'로 적용한다.*/
+#centerbox{text-align:center;}
+#rightbox{text-align:right;}
+
+#middleleft{ width:50%; float:left; }
+#middleright{width:50%; float:right;}
